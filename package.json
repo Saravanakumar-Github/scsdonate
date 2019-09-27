@@ -1,0 +1,25 @@
+{
+  "name": "braintreetutorial",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "braintree": "^2.12.0",
+    "braintree-web": "^3.52.1",
+    "braintree-web-drop-in": "^1.19.0",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.6.9",
+    "express": "~4.16.0",
+    "hbs": "~4.0.0",
+    "http-errors": "~1.6.2",
+    "morgan": "^1.9.1",
+    "requirejs": "^2.3.6"
+  },
+  "main": "app.js",
+  "devDependencies": {},
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

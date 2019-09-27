@@ -1,0 +1,331 @@
+<!-- Material Design inspired Hosted Fields theme -->
+
+<!-- Icons are taken from the material design library https://github.com/google/material-design-icons/ -->
+
+<!--[if IE 9]>
+<style>
+
+.panel {
+  margin: 2em auto 0;
+}
+
+</style>
+<![endif]-->
+<div id="checkout-message"></div>
+<form id="cardForm">
+  <div class="panel">
+    <header class="panel__header">
+      <h1>Card Payment</h1>
+    </header>
+    <div class="panel__content">
+      <div class="textfield--float-label">
+        <!-- Begin hosted fields section -->
+        <label class="hosted-field--label" for="card-number"><span class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path d="M0 0h24v24H0z" fill="none" />
+              <path
+                d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
+            </svg></span> Card Number
+        </label>
+        <div id="card-number" class="hosted-field"></div>
+        <!-- End hosted fields section -->
+      </div>
+      <div class="textfield--float-label">
+        <!-- Begin hosted fields section -->
+        <label class="hosted-field--label" for="expiration-date">
+          <span class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path
+                d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z" />
+            </svg>
+          </span>
+          Expiration Date</label>
+        <div id="expiration-date" class="hosted-field"></div>
+        <!-- End hosted fields section -->
+      </div>
+      <div class="textfield--float-label">
+        <!-- Begin hosted fields section -->
+        <label class="hosted-field--label" for="cvv">
+          <span class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path
+                d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+            </svg>
+          </span>
+          CVV</label>
+        <div id="cvv" class="hosted-field"></div>
+        <!-- End hosted fields section -->
+      </div>
+      <div class="textfield--float-label">
+        <!-- Begin hosted fields section -->
+        <label class="hosted-field--label" for="postal-code">
+          <span class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path
+                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+            </svg>
+          </span>
+          Postal Code</label>
+        <div id="postal-code" class="hosted-field"></div>
+        <!-- End hosted fields section -->
+      </div>
+    </div>
+    <footer class="panel__footer">
+      <button class="pay-button">Pay</button>
+    </footer>
+    <br><br><br>
+    <div id='PayPal'>
+      <div id="paypal-button"></div>
+    </div>
+  </div>
+</form>
+
+<!-- Load the client component. -->
+<script src="https://js.braintreegateway.com/web/3.52.0/js/client.min.js"></script>
+
+<!-- Load the Hosted Fields component.. -->
+<script src="https://js.braintreegateway.com/web/3.52.0/js/hosted-fields.min.js"></script>
+
+<!-- Load the 3D Secure component. -->
+<script src="https://js.braintreegateway.com/web/3.52.0/js/three-d-secure.min.js"></script>
+
+<!-- Load PayPal's checkout.js Library. -->
+<script src="https://www.paypalobjects.com/api/checkout.js" data-version-4 log-level="warn"></script>
+
+<!-- Load the PayPal Checkout component. -->
+<script src="https://js.braintreegateway.com/web/3.52.0/js/paypal-checkout.min.js"></script>
+
+<script>
+  // to get client token
+  var threeDSecure;
+  var client_token;
+  var transcationId;
+  $.ajax({
+    type: 'GET',
+    url: '/checkout',
+  }).done(function (result) {
+    client_token = result;
+    console.log(result);
+    /*braintree.client.create({
+      authorization: client_token
+    }, function(err, clientInstance) {
+      if (err) {
+        console.error(err);
+        return;
+      }*/
+    //3D secure 2.0
+    braintree.threeDSecure.create({
+      version: 2, // Will use 3DS 2 whenever possible
+      //client: client_token
+      authorization: client_token
+    }, function (threeDSecureErr, threeDSecureInstance) {
+      if (threeDSecureErr) {
+        // Handle error in 3D Secure component creation
+        return;
+      }
+      threeDSecure = threeDSecureInstance;
+    });
+
+    //Create the hosted fields
+
+    braintree.hostedFields.create({
+      authorization: client_token,
+      //client: clientInstance,
+      styles: {
+        'input': {
+          'font-size': '16px',
+          'font-family': 'roboto, verdana, sans-serif',
+          'font-weight': 'lighter',
+          'color': 'black'
+        },
+        ':focus': {
+          'color': 'black'
+        },
+        '.valid': {
+          'color': 'black'
+        },
+        '.invalid': {
+          'color': 'black'
+        }
+      },
+      fields: {
+        number: {
+          selector: '#card-number',
+          placeholder: '1111 1111 1111 1111',
+          // maskInput: true
+        },
+        cvv: {
+          selector: '#cvv',
+          placeholder: '111'
+        },
+        expirationDate: {
+          selector: '#expiration-date',
+          placeholder: 'MM/YY'
+        },
+        postalCode: {
+          selector: '#postal-code',
+          placeholder: '11111'
+        }
+      }
+    }, function (err, hostedFieldsInstance) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+
+      function findLabel(field) {
+        return $('.hosted-field--label[for="' + field.container.id + '"]');
+      }
+
+      hostedFieldsInstance.on('focus', function (event) {
+        var field = event.fields[event.emittedBy];
+
+        findLabel(field).addClass('label-float').removeClass('filled');
+      });
+
+      // Emulates floating label pattern
+      hostedFieldsInstance.on('blur', function (event) {
+        var field = event.fields[event.emittedBy];
+        var label = findLabel(field);
+
+        if (field.isEmpty) {
+          label.removeClass('label-float');
+        } else if (field.isValid) {
+          label.addClass('filled');
+        } else {
+          label.addClass('invalid');
+        }
+      });
+
+      hostedFieldsInstance.on('empty', function (event) {
+        var field = event.fields[event.emittedBy];
+
+        findLabel(field).removeClass('filled').removeClass('invalid');
+      });
+
+      hostedFieldsInstance.on('validityChange', function (event) {
+        var field = event.fields[event.emittedBy];
+        var label = findLabel(field);
+
+        if (field.isPotentiallyValid) {
+          label.removeClass('invalid');
+        } else {
+          label.addClass('invalid');
+        }
+      });
+
+      $('#cardForm').submit(function (event) {
+        event.preventDefault();
+
+        hostedFieldsInstance.tokenize(function (err, payload) {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log('client side: payloadnonce:' + payload.nonce);
+          console.log('Full payload: ' + JSON.stringify(payload));
+          threeDSecure.verifyCard({
+            amount: '10.00',
+            nonce: payload.nonce,
+            bin: payload.details.bin,
+            email: 'test@example.com',
+            //exemptionRequested: true,
+            challengeRequested: true,
+            billingAddress: {
+              givenName: 'Jill',
+              surname: 'Doe',
+              phoneNumber: '8101234567',
+              streetAddress: '555 Smith St.',
+              extendedAddress: '#5',
+              locality: 'Oakland',
+              region: 'CA',
+              postalCode: '12345',
+              countryCodeAlpha2: 'US'
+            },
+            additionalInformation: {
+              workPhoneNumber: '5555555555',
+              shippingGivenName: 'Jill',
+              shippingSurname: 'Doe',
+              acsWindowSize: '05',
+              shippingAddress: {
+                streetAddress: '555 Smith st',
+                extendedAddress: '#5',
+                locality: 'Oakland',
+                region: 'CA',
+                postalCode: '12345',
+                countryCodeAlpha2: 'US'
+              }
+             // shippingPhone: '8101234567',
+            },
+            /**
+            * @function onLookupComplete
+            * Newly required in `verifyCard` options object, will be called after receiving ThreeDSecure
+            * response, before completing the flow.
+            * @param {object} data - ThreeDSecure data to consume before continuing
+            * @param {string} data.paymentMethod.nonce - payment nonce
+            * @param {object} data.threeDSecureInfo
+            * @param {boolean} data.threeDSecureInfo.liabilityShifted
+            * @param {boolean} data.threeDSecureInfo.liabilityShiftPossible
+            * @param {function} next - callback to continue flow
+            * */
+            onLookupComplete: function (data, next) {
+              // use `data` here, then call `next()`
+              console.log(JSON.stringify(data));
+              console.log(data.threeDSecureInfo);
+              console.log('nonce:  ' + data.paymentMethod.nonce);
+              //document.querySelector('#nonce').value = data.paymentMethod.nonce;
+              next();
+            }
+          }, function (err, response) {
+            console.log('response:' + response);
+            //console.log('response nonce:'+ response.nonce);
+            console.log(JSON.stringify(response));
+            console.log(JSON.stringify('Lb shifted: ' + response.liabilityShifted));
+            // sleep(5000);
+            console.log('err:' + err);
+            // document.querySelector('#nonce').value = response.nonce;
+            //form.submit();
+            //});
+
+            // This is where you would submit payload.nonce to your server
+            $.ajax({
+              type: 'POST',
+              url: '/checkout',
+              data: { 'paymentMethodNonce': response.nonce, 'device_data': payload.deviceData }
+            }).done(function (result) {
+              console.log('ajax res: ' + result);
+              // Tear down the Drop-in UI
+              hostedFieldsInstance.teardown(function (teardownErr) {
+                if (teardownErr) {
+                  console.error('Could not tear down Drop-in UI!');
+                } else {
+                  console.info('Drop-in UI has been torn down!');
+                  // Remove the 'Submit payment' button
+                  $('#submit-button').remove();
+                }
+              });
+
+              if (result.success) {
+                //Displaying results from array
+                var replacedName = 'Credit Card';
+                var resultArray = [result.transaction.id, result.transaction.amount, result.transaction.createdAt, result.transaction.paymentInstrumentType, result.transaction.currencyIsoCode]
+                transcationId = result.transaction.id;
+                var paymentInstrumentTypeConverted = JSON.stringify(result.transaction.paymentInstrumentType).replace(result.transaction.paymentInstrumentType, replacedName);
+                $('#checkout-message').html("<h1>Success</h1><p>Transaction ID:" + " " + transcationId + "</p><p>Transaction amount:" + " " + result.transaction.amount + " " + result.transaction.currencyIsoCode + "</p><p>Created At:" + " " + result.transaction.createdAt + "</p><p>Payment Type:" + " " + paymentInstrumentTypeConverted + "</p>");
+                $('#cardForm').hide();
+                $('#refund-container').show();
+                $('#customer-container').show();
+                $('#delCustID').show();
+                $('#createSubscription-button').show();
+              } else if (result == false) {
+                $('#cardForm').hide();
+                $('#checkout-message').html("<h1>Transaction failed. View logs or GW for more info</h1>");
+              }
+            });
+          });
+        });
+      });
+    });
+  });
+
+</script>

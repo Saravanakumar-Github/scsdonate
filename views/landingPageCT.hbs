@@ -1,0 +1,231 @@
+  <script src="https://js.braintreegateway.com/web/dropin/1.20.1/js/dropin.min.js"></script>
+  <script src="https://js.braintreegateway.com/web/3.52.0/js/data-collector.min.js"></script>
+
+  <div id="checkout-message"></div>
+  <div id="dropin-container"></div>
+  <button id="submit-button">Pay</button>
+<!--Refund divs-->
+<div id="refund-container">
+  <input type="text" id="rTransID">Enter Transaction ID to refund</input></br>
+  <button id="refund-button">Refund</button>
+</div></br>
+<!--Customer divs-->
+<div id="customer-container">
+  <button id="createCustomer-button">Create Customer</button></br></br>
+  <input type="text" id="delCustID">Enter Cutomer ID to delete</input></br>
+  <button id="deleteCustomer-button">Delete Customer</button>
+</div>
+<!--subscribe divs-->
+<div id="sub-container">
+  <button id="createSubscription-button">Add to subsciption</button></br></br>
+</div>
+
+  <script>
+  var button = document.querySelector('#submit-button');
+
+$(document).ready(function(){
+// to get client token
+  var client_token;
+  var transcationId;
+  var amount3ds = 10.00;
+  $.ajax({
+    type: 'GET',
+    url: '/checkout',
+    }).done(function(result) {
+  client_token = result;
+  console.log(result);
+  //Create the dropin
+  braintree.dropin.create({
+    authorization: client_token,
+    container: '#dropin-container',
+    //locale: 'en_UK',
+    //Adding cardholder field
+    card: {
+      cardholderName: true,
+      vault: { 
+        vaultCard: true, 
+        allowVaultCardOverride: true, 
+        },
+        /*overrides: {
+        fields: {
+          cvv: null,
+        }
+      }*/
+    },
+//threeDSecure: true,
+  //Adding 3D secure
+  threeDSecure: {
+    amount: amount3ds,
+  },
+    //Adding paypal option
+    paypal: {
+    flow: 'vault',
+    //ignored if vaulted
+   // flow: 'checkout',
+    //amount: '10.00',
+   // currency: 'MYR',
+    },
+  //Adding google Pay
+  googlePay: {
+    transactionInfo: {
+    totalPriceStatus: 'FINAL',
+    totalPrice: '10.00',
+    currencyCode: 'EUR'
+    },
+    cardRequirements: {
+    // We recommend collecting and passing billing address information with all Google Pay transactions as a best practice.
+    billingAddressRequired: true
+    }
+  },    
+  //Kount
+  dataCollector: {
+    kount: true,
+    paypal: true
+  }
+  }, function (createErr, instance) {
+    button.addEventListener('click', function () {
+    instance.requestPaymentMethod({
+      threeDSecure: {
+      challengeRequested: true,
+      email: 'test3DS@bt.com',
+      acsWindowSize: '05',
+      billingAddress: {
+        givenName: 'test',
+        surname: 'test',
+        phoneNumber: '96541255',
+        streetAddress: 'testadd',
+        extendedAddress: 'billing-extended-address',
+        locality: 'billing-locality',
+        region: 'billing-region',
+        postalCode: '12345',
+        countryCodeAlpha2: 'AA'
+      }
+      }
+    },function (err, payload) {
+      alert(payload.nonce);
+      if(err == null){
+        $('.braintree-large-button').remove();
+      }
+      $.ajax({
+      type: 'POST',
+      url: '/checkout',
+      data: {'paymentMethodNonce': payload.nonce,'device_data':payload.deviceData}
+    }).done(function(result) {
+      // Tear down the Drop-in UI
+      instance.teardown(function (teardownErr) {
+      if (teardownErr) {
+        console.error('Could not tear down Drop-in UI!');
+      } else {
+        console.info('Drop-in UI has been torn down!');
+        
+        // Remove the 'Submit payment' button
+        $('#submit-button').remove();
+      }
+      });
+
+      if (result.success) {
+    //Displaying results from array
+      var replacedName = 'Credit Card';
+      var resultArray = [result.transaction.id, result.transaction.amount , result.transaction.createdAt , result.transaction.paymentInstrumentType, result.transaction.currencyIsoCode]
+      transcationId = result.transaction.id;
+      var paymentInstrumentTypeConverted = JSON.stringify(result.transaction.paymentInstrumentType).replace(result.transaction.paymentInstrumentType, replacedName);
+      $('#checkout-message').html("<h1>Success</h1><p>Transaction ID:"+" "+transcationId+"</p><p>Transaction amount:"+" "+result.transaction.amount+" "+result.transaction.currencyIsoCode+"</p><p>Created At:"+" "+result.transaction.createdAt+"</p><p>Payment Type:"+" "+paymentInstrumentTypeConverted+"</p>");
+      $('#refund-container').show();
+      $('#customer-container').show();
+      $('#delCustID').show();
+      $('#createSubscription-button').show();
+    //refund ajax
+      $('#refund-button').click(function () {
+        alert('Recently done: '+ transcationId);
+        var refundTransID = $('input#rTransID').val();
+        
+          $.ajax({
+          type: 'POST',
+          url: '/refund/refund',
+          data: {'refundTrasactId': refundTransID}
+        }).done(function(result) {
+          //alert(data);
+          if (result.success) {
+            $('#checkout-message').hide();
+            $('#refund-container').html('<div id="refund-success">Refund-Success</div>'+" "+'<div><p>Transaction Type:'+" "+result.transaction.type+" Amount "+result.transaction.amount+'</p></div>');
+          } else {
+          console.log(result);
+          $('#checkout-message').hide();
+          $('#refund-container').html('<div id="refund-failure">Refund-Error</div>');
+          }
+        });
+      });
+      //Customer-create ajax
+      $('#createCustomer-button').click(function () {
+          $.ajax({
+          type: 'POST',
+          url: '/customer/createCustomer',
+          data: {'firstName': "Jen",'lastName': "Smith",'company': "Braintree", 'email': "new123@example.com",'phone': "123456789"}
+        }).done(function(result) {
+          //alert(data);
+          if (result.success) {
+            $('#checkout-message').hide();
+            $('#refund-container').hide();
+            $('#customer-container').html('<div id="customer-success">Customer_create-Success</div>');
+          } else {
+          console.log(result);
+          $('#checkout-message').hide();
+          $('#customer-container').html('<div id="customer-failure">Customer_create-Error</div>');
+          }
+        });
+      });
+      //Customer-Delete ajax
+      $('#deleteCustomer-button').click(function () {
+          var custID = $('input#delCustID').val();
+        alert(custID);
+          $.ajax({
+          type: 'POST',
+          url: '/customer/delCustomer',
+          data: {'customerID': custID}
+        }).done(function(result) {
+          alert(result);
+          if (result.success) {
+            $('#checkout-message').hide();
+            $('#refund-button').hide();
+            $('#createCustomer-button').hide();
+            $('#customer-container').html('<div id="customer-success">Customer_delete-Success</div>');
+          } else {
+          console.log(result);
+          $('#checkout-message').hide();
+          $('#customer-container').html('<div id="customer-failure">Customer_delete-Error</div>');
+          }
+        });
+      });
+    //Create subsciption ajax
+      $('#createSubscription-button').click(function () {
+        alert(client_token);
+          $.ajax({
+          type: 'POST',
+          url: '/customer/subscription',
+          data: {/*'clientToken': client_token,'planId': 'sskpid'*/}
+        }).done(function(result) {
+          alert(result);
+          if (result.success) {
+            $('#checkout-message').hide();
+            $('#refund-button').hide();
+            $('#createCustomer-button').hide();
+            $('#deleteCustomer-button').hide();
+            $('#sub-container').html('<div id="subscribe-success">subscribed-Success</div>');
+          } else {
+          console.log(result);
+          $('#checkout-message').hide();
+          $('#sub-container').html('<div id="subscribe-failure">subscribed-Error</div>');
+          }
+        });
+      });
+      } else {
+      console.log(result);
+      $('#checkout-message').html('<h1>Error</h1><p>Check your console.</p>');
+      }
+    });
+    });
+    });
+  });
+  });
+});
+  </script>
