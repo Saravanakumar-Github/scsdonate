@@ -5,9 +5,9 @@ var braintree = require('braintree');
 var gateway = braintree.connect({
 environment: braintree.Environment.Sandbox,
 // Use your own credentials from the sandbox Control Panel here
-merchantId: '3xj4zw2pjhs26929',
-publicKey: '9vm3gb2272p4kcpb',
-privateKey: 'c3c33d8fb55cd194145efc975b8828a3'
+merchantId: '',
+publicKey: '',
+privateKey: ''
 });
 
 //post methods
