@@ -5,30 +5,11 @@ var braintree = require('braintree');
 var gateway = braintree.connect({
   environment: braintree.Environment.Sandbox,
   // Use your own credentials from the sandbox Control Panel here
-  merchantId: '3xj4zw2pjhs26929',
-  publicKey: '9vm3gb2272p4kcpb',
-  privateKey: 'c3c33d8fb55cd194145efc975b8828a3'
+  merchantId: 'Sandbox merchant ID here',
+  publicKey: 'Sandbox public key here',
+  privateKey: 'Sandbox private key here'
   });
 
- /* gateway.merchantAccount.find("theMerchantAccountId", function (err, merchantAccount) {
-  });*/
-
-  //generate a client token -ssk
-  /*gateway.clientToken.generate({
-    customerId: 9629395050,
-    options:{
-      failOnDuplicatePaymentMethod: true
-    }
-  }, function (err, response) {
-    var clientToken = response.clientToken
-  });*/
-
-    //with client token
-   /*router.get('/', function(req, res, next) {
-      gateway.clientToken.generate({customerId: 9629395050,options:{failOnDuplicatePaymentMethod: true}}, function (err, response) {
-        res.send(response.clientToken);
-      }); 
-    });*/
 
     router.get('/', function(req, res, next) {
       gateway.clientToken.generate({}, function (err, response) {
@@ -59,7 +40,6 @@ router.post('/', function(req, res, next) {
   //amount: '10.00',
   amount: amt,
   paymentMethodNonce: nonceFromTheClient,
-  //merchantAccountId: 'testMYR',
   options: {
     // This option requests the funds from the transaction
     // once it has been authorized successfully
